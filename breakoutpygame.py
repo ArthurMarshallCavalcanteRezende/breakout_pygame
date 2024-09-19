@@ -56,6 +56,58 @@ player_1_y = HEIGHT_SCREEN - 60   # y position near the bottom of the screen
 player_1_move_right = False
 player_1_move_left = False
 
+# Create ball
+ball = pygame.image.load("assets/ball.png")
+ball_x = WIDTH_SCREEN/2 - 5
+ball_y = HEIGHT_SCREEN - 70
+ball_width = 10
+ball_height = 10
+
+# block variables
+BLOCK_WALL_COLUMN = 14
+BLOCK_WALL_ROWS = 8
+
+# Create the wall of blocks
+class BLOCKS:
+    def __init__(self):
+        self.width = (WIDTH_SCREEN - 12)//BLOCK_WALL_COLUMN
+        self.height = 13
+
+    def create_walls(self):
+        self.block_wall = []
+
+        for row in range(BLOCK_WALL_ROWS):
+            # New block row list
+            row_block = []
+            for column in range(BLOCK_WALL_COLUMN):
+                # x and y positions for each block
+                block_x = column * self.width + 8
+                block_y = row * self.height + 128
+                # create a block
+                rect = pygame.Rect(block_x, block_y, self.width, self.height)
+                # append that rect to the block row
+                row_block.append(rect)
+            # append the row to the full list of blocks
+            self.block_wall.append(row_block)
+
+    def draw_walls(self):
+        for i_row in range(BLOCK_WALL_ROWS):
+            for block in self.block_wall[i_row]:
+                # assign block color based on row
+                if i_row == 0 or i_row == 1:
+                    color_block = COLOR_RED
+                elif i_row == 2 or i_row == 3:
+                    color_block = COLOR_ORANGE
+                elif i_row == 4 or i_row == 5:
+                    color_block = COLOR_GREEN
+                elif i_row == 6 or i_row == 7:
+                    color_block = COLOR_YELLOW
+                pygame.draw.rect(screen, color_block, block)
+                pygame.draw.rect(screen, COLOR_BLACK, block, 2)
+
+wall_block = BLOCKS()
+wall_block.create_walls()
+
 # game loop
 game_loop = True
 game_clock = pygame.time.Clock()
@@ -107,19 +159,21 @@ while game_loop:
         pygame.draw.rect(screen, COLOR_YELLOW, (width, 205, 10, 25))
         pygame.draw.rect(screen, COLOR_PADDLE, (width, HEIGHT_SCREEN - 67, 10, 30))
 
+    # Draw block wall
+    wall_block.draw_walls()
     # Draw white borders: top, left, and right
     pygame.draw.rect(screen, COLOR_WHITE, (0, 0, WIDTH_SCREEN, 25))  # Top border
     pygame.draw.rect(screen, COLOR_WHITE, (0, 0, 10, HEIGHT_SCREEN))  # Left border
     wall_colors(0) # Left border color
     pygame.draw.rect(screen, COLOR_WHITE, (WIDTH_SCREEN - 10, 0, 10, HEIGHT_SCREEN))  # Right border
     wall_colors(WIDTH_SCREEN - 10) # Left border color
-
-
+    # Drawing texts
     screen.blit(level_text, level_text_rect)
     screen.blit(try_text, try_text_rect)
     screen.blit(score_text, score_text_rect)
     screen.blit(score_2_text, score_2_text_rect)
-
+    # Draw ball
+    pygame.draw.rect(screen, COLOR_WHITE, (ball_x, ball_y, ball_width, ball_height))
 
     if interval:
         # Draw start line
