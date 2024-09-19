@@ -177,7 +177,7 @@ while game_loop:
 
     if interval:
         # Draw start line
-        pygame.draw.rect(screen, COLOR_PADDLE, (0, HEIGHT_SCREEN - 60, WIDTH_SCREEN, 15))  # Top border
+        start_line = pygame.draw.rect(screen, COLOR_PADDLE, (0, HEIGHT_SCREEN - 60, WIDTH_SCREEN, 15))  # Top border
         screen.blit(start_text, start_text_rect)
     else:
         pygame.draw.rect(screen, COLOR_PADDLE, (player_1_x, player_1_y, player_1_width, player_1_height))
