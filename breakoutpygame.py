@@ -58,12 +58,13 @@ player_1_move_left = False
 
 # Create ball
 ball = pygame.image.load("assets/ball.png")
-ball_x = WIDTH_SCREEN/2 - 5
+ball_x = (WIDTH_SCREEN/2) - 5
 ball_y = HEIGHT_SCREEN - 70
 ball_width = 10
 ball_height = 10
 ball_dx = 5
 ball_dy = 5
+ball_area = ball_width * ball_height
 
 # block variables
 BLOCK_WALL_COLUMN = 14
@@ -115,6 +116,13 @@ game_loop = True
 game_clock = pygame.time.Clock()
 interval = True
 
+# collision check function
+def collision_check(width, height):
+    global ball_x, ball_y, ball_dx, ball_dy, WIDTH_SCREEN, HEIGHT_SCREEN
+    if ball_x >= WIDTH_SCREEN - width:
+        ball_x *= -1
+        return True
+
 while game_loop:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -131,6 +139,10 @@ while game_loop:
                 player_1_move_left = True
             if event.key == pygame.K_RIGHT:
                 player_1_move_right = True
+
+    # ball collision with player 1
+    if (player_1_y < ball_y + 4 < player_1_y + player_1_height) and (player_1_x < ball_x < player_1_x + player_1_width):
+        ball_dy *= -1
 
     # player 1 right movement
     if player_1_move_right:
@@ -153,6 +165,23 @@ while game_loop:
     # ball movement
     ball_x = ball_x + ball_dx
     ball_y = ball_y + ball_dy
+
+    # ball collides with wall
+    if ball_y >= HEIGHT_SCREEN:
+        ball_dy *= -1
+        ball_y = HEIGHT_SCREEN - ball_height
+
+    if ball_y <= 0:
+        ball_dy *= -1
+        ball_y = 0
+
+    if ball_x >= WIDTH_SCREEN - ball_width:
+        ball_dx *= -1
+        ball_x = WIDTH_SCREEN - ball_width
+
+    if ball_x <= 0:
+        ball_dx *= -1
+        ball_x = 0
 
     # Drawing objects
     screen.fill(COLOR_BLACK)
@@ -183,8 +212,11 @@ while game_loop:
 
     if interval:
         # Draw start line
-        start_line = pygame.draw.rect(screen, COLOR_PADDLE, (0, HEIGHT_SCREEN - 60, WIDTH_SCREEN, 15))  # Top border
+        pygame.draw.rect(screen, COLOR_PADDLE, (0, HEIGHT_SCREEN - 60, WIDTH_SCREEN, 15)) # Top border
+        sline_x = HEIGHT_SCREEN - 60
+        sline_y = WIDTH_SCREEN
         screen.blit(start_text, start_text_rect)
+        collision_check(sline_y, sline_x)
     else:
         pygame.draw.rect(screen, COLOR_PADDLE, (player_1_x, player_1_y, player_1_width, player_1_height))
 
