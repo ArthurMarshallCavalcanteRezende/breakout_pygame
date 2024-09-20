@@ -62,6 +62,8 @@ ball_x = WIDTH_SCREEN/2 - 5
 ball_y = HEIGHT_SCREEN - 70
 ball_width = 10
 ball_height = 10
+ball_dx = 5
+ball_dy = 5
 
 # block variables
 BLOCK_WALL_COLUMN = 14
@@ -147,6 +149,10 @@ while game_loop:
         player_1_x = 0
     elif player_1_x >= WIDTH_SCREEN - player_1_width:
         player_1_x = WIDTH_SCREEN - player_1_width
+
+    # ball movement
+    ball_x = ball_x + ball_dx
+    ball_y = ball_y + ball_dy
 
     # Drawing objects
     screen.fill(COLOR_BLACK)
