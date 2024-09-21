@@ -140,9 +140,14 @@ while game_loop:
             if event.key == pygame.K_RIGHT:
                 player_1_move_right = True
 
-    # ball collision with player 1
-    if (player_1_y < ball_y + 4 < player_1_y + player_1_height) and (player_1_x < ball_x < player_1_x + player_1_width):
-        ball_dy *= -1
+    if not interval:
+        # ball collision with player 1
+        if (player_1_y < ball_y + 4 < player_1_y + player_1_height) and (player_1_x < ball_x < player_1_x + player_1_width):
+            ball_dy *= -1
+    else:
+        # ball collision with a bottom line
+        if ball_y >= (HEIGHT_SCREEN - 60) - ball_height:
+            ball_dy *= -1
 
     # player 1 right movement
     if player_1_move_right:
@@ -202,11 +207,13 @@ while game_loop:
     wall_colors(0) # Left border color
     pygame.draw.rect(screen, COLOR_WHITE, (WIDTH_SCREEN - 10, 0, 10, HEIGHT_SCREEN))  # Right border
     wall_colors(WIDTH_SCREEN - 10) # Left border color
+
     # Drawing texts
     screen.blit(level_text, level_text_rect)
     screen.blit(try_text, try_text_rect)
     screen.blit(score_text, score_text_rect)
     screen.blit(score_2_text, score_2_text_rect)
+
     # Draw ball
     pygame.draw.rect(screen, COLOR_WHITE, (ball_x, ball_y, ball_width, ball_height))
 
@@ -216,7 +223,7 @@ while game_loop:
         sline_x = HEIGHT_SCREEN - 60
         sline_y = WIDTH_SCREEN
         screen.blit(start_text, start_text_rect)
-        collision_check(sline_y, sline_x)
+        # collision_check(sline_y, sline_x)
     else:
         pygame.draw.rect(screen, COLOR_PADDLE, (player_1_x, player_1_y, player_1_width, player_1_height))
 
