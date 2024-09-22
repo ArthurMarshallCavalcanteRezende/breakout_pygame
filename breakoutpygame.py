@@ -19,6 +19,10 @@ size = (WIDTH_SCREEN, HEIGHT_SCREEN)
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption("Breakout - PyGame Edition - 2024-09-17")
 
+# max tries and tries variables
+MAX_TRIES = 4
+tries = 1
+
 # level text
 text_font = pygame.font.Font('assets/pong-score.ttf', 45)
 level_text = text_font.render("1", True, COLOR_WHITE)
@@ -26,9 +30,13 @@ level_text_rect = level_text.get_rect()
 level_text_rect.center = (40, 50)
 
 # try text
-try_text = text_font.render("1", True, COLOR_WHITE)
-try_text_rect = try_text.get_rect()
-try_text_rect.center = (350, 50)
+def try_text_update(tries):
+    try_text = text_font.render(f"{tries}", True, COLOR_WHITE)
+    try_text_rect = try_text.get_rect()
+    try_text_rect.center = (350, 50)
+    return try_text, try_text_rect
+
+try_text, try_text_rect = try_text_update(tries)
 
 # score text
 score_font = pygame.font.Font('assets/pong-score.ttf', 50)
@@ -70,6 +78,7 @@ ball_area = ball_width * ball_height
 BLOCK_WALL_COLUMN = 14
 BLOCK_WALL_ROWS = 8
 
+collision_active = True  # Collision starts as active
 
 # Create the wall of blocks
 class BLOCKS:
@@ -117,17 +126,28 @@ wall_block.create_walls()
 game_loop = True
 game_clock = pygame.time.Clock()
 interval = True
+game_over = False
 
 
-# collision check function
-def collision_check(wall_blocks):
-    global ball_x, ball_y, ball_dx, ball_dy
-    if (wall_blocks.top < ball_y + 4 < wall_blocks.top + wall_blocks.height) and (
+# Check collision with `collision_active` flag
+def collision_check(wall_blocks, row):
+    global ball_x, ball_y, ball_dx, ball_dy, collision_active
+    if collision_active and not interval:
+        if (wall_blocks.top < ball_y + 4 < wall_blocks.top + wall_blocks.height) and (
             wall_blocks.left < ball_x < wall_blocks.left + wall_blocks.width):
-        ball_dy *= -1
-        return True
+            ball_dy *= -1
+            wall_block.block_wall[row].remove(wall_blocks)
+            collision_active = False
+            return True
     return False
 
+def reset_ball_paddle():
+    global ball_x, ball_y, ball_dx, ball_dy, player_1_x
+    ball_x = (WIDTH_SCREEN / 2) + 200
+    ball_y = HEIGHT_SCREEN - 350
+    ball_dx = 5
+    ball_dy = 5
+    player_1_x = (WIDTH_SCREEN / 2) - 25  # Initial x position
 
 while game_loop:
     for event in pygame.event.get():
@@ -135,10 +155,11 @@ while game_loop:
             game_loop = False
         elif event.type == pygame.KEYDOWN:
             if interval:
-                ball_x = (WIDTH_SCREEN / 2) + 200
-                ball_y = HEIGHT_SCREEN - 350
-                ball_dx = 5
-                ball_dy = 5
+                if game_over: # game reset
+                    wall_block.create_walls()
+                    tries = 1
+                    game_over = False
+                reset_ball_paddle()
                 interval = False
             if event.key == pygame.K_LEFT:
                 player_1_move_left = False
@@ -151,15 +172,17 @@ while game_loop:
             if event.key == pygame.K_RIGHT:
                 player_1_move_right = True
 
-    # function check the collision and destruction of each block
-    for i in wall_block.block_wall:
+    # We pass the row index (row_index) to the collision_check function
+    for row_index, i in enumerate(wall_block.block_wall):
         for coloured_block in i:
-            collision_check(coloured_block)
+            if collision_check(coloured_block, row_index):
+                pass
 
     if not interval:
         # ball collision with player 1
         if (player_1_y < ball_y + 4 < player_1_y + player_1_height) and (
                 player_1_x < ball_x < player_1_x + player_1_width):
+            collision_active = True
             ball_dy *= -1
     else:
         # ball collision with a bottom line
@@ -188,25 +211,35 @@ while game_loop:
     ball_x = ball_x + ball_dx
     ball_y = ball_y + ball_dy
 
-    # ball collides with bottom border
+    # Checks the collision of the ball with the bottom edge
     if ball_y >= HEIGHT_SCREEN:
+        tries += 1
+        if tries > 4:
+           game_over = True
+        # interval screen
+        interval = True
         ball_dy *= -1
-        ball_y = HEIGHT_SCREEN - ball_height
+        ball_y = player_1_y - ball_height - 10
 
     # ball collides with top border
     if ball_y <= 0:
         ball_dy *= -1
         ball_y = 0
+        collision_active = True
+        if player_1_width == 50 and not interval: # Reduce paddle size
+            player_1_width = 25
 
     # ball collides with right border
     if ball_x >= WIDTH_SCREEN - ball_width:
         ball_dx *= -1
         ball_x = WIDTH_SCREEN - ball_width
+        collision_active = True
 
     # ball collides with left border
     if ball_x <= 0:
         ball_dx *= -1
         ball_x = 0
+        collision_active = True
 
     # Drawing objects
     screen.fill(COLOR_BLACK)
@@ -231,6 +264,7 @@ while game_loop:
 
     # Drawing texts
     screen.blit(level_text, level_text_rect)
+    try_text, try_text_rect = try_text_update(tries)
     screen.blit(try_text, try_text_rect)
     screen.blit(score_text, score_text_rect)
     screen.blit(score_2_text, score_2_text_rect)
