@@ -31,6 +31,7 @@ level_text = text_font.render("1", True, COLOR_WHITE)
 level_text_rect = level_text.get_rect()
 level_text_rect.center = (40, 50)
 
+
 # try text
 def try_text_update(tries):
     try_text = text_font.render(f"{tries}", True, COLOR_WHITE)
@@ -38,22 +39,27 @@ def try_text_update(tries):
     try_text_rect.center = (350, 50)
     return try_text, try_text_rect
 
+
 try_text, try_text_rect = try_text_update(tries)
 
 # score text
 score_font = pygame.font.Font('assets/pong-score.ttf', 50)
+
 
 def score_text_update(score):
     score_text = score_font.render(f'{'%03d' % score}', True, COLOR_WHITE)
     score_text_rect = score_text.get_rect()
     score_text_rect.center = (120, 100)
     return score_text, score_text_rect
+
+
 score_text, score_text_rect = score_text_update(score)
 
 # score 2 text
 score_2_text = score_font.render('000', True, COLOR_WHITE)
 score_2_text_rect = score_2_text.get_rect()
 score_2_text_rect.center = (430, 100)
+on_score = 0
 
 # Text to start the game
 start_font = pygame.font.Font('assets/PressStart2P.ttf', 15)
@@ -67,6 +73,8 @@ player_1_width = 50  # Width of the player
 player_1_height = 15  # Height of the player
 player_1_x = (WIDTH_SCREEN / 2) - 25  # Initial x position
 player_1_y = HEIGHT_SCREEN - 60  # y position near the bottom of the screen
+player_1_hitbox_width = 70
+paddle_margin = (player_1_hitbox_width - player_1_width) / 2
 player_1_move_right = False
 player_1_move_left = False
 PLAYER_SPEED = 6
@@ -82,11 +90,17 @@ ball_dy = 5
 ball_area = ball_width * ball_height
 MAX_BALL_SPEED = 6.2
 
+# sound effects
+paddle_sound = pygame.mixer.Sound('assets/paddle.wav')
+wall_sound = pygame.mixer.Sound('assets/wall.wav')
+block_sound = pygame.mixer.Sound('assets/block.wav')
+
 # block variables
 BLOCK_WALL_COLUMN = 14
 BLOCK_WALL_ROWS = 8
 
 collision_active = True  # Collision starts as active
+
 
 # Create the wall of blocks
 class BLOCKS:
@@ -126,6 +140,7 @@ class BLOCKS:
                 pygame.draw.rect(screen, color_block, block)
                 pygame.draw.rect(screen, COLOR_BLACK, block, 2)
 
+
 def score_row(i_row):
     if i_row == 0 or i_row == 1:
         score = 7
@@ -139,7 +154,8 @@ def score_row(i_row):
     elif i_row == 6 or i_row == 7:
         score = 1
         speed = 1
-    return score,speed
+    return score, speed
+
 
 wall_block = BLOCKS()
 wall_block.create_walls()
@@ -152,15 +168,16 @@ interval = True
 game_over = False
 hits = 0
 
+
 # Check collision with `collision_active` flag
 def collision_check(wall_blocks, row):
     global ball_x, ball_y, ball_dx, ball_dy, collision_active, score, score_text, score_text_rect, hits
     if collision_active:
         if (wall_blocks.top < ball_y + 4 < wall_blocks.top + wall_blocks.height) and (
-            wall_blocks.left < ball_x < wall_blocks.left + wall_blocks.width):
+                wall_blocks.left < ball_x < wall_blocks.left + wall_blocks.width):
             score_block, speed = score_row(row)
-            if ball_dy > MAX_BALL_SPEED: # reduction of ball speed limit
-                ball_dy *= 2/3
+            if ball_dy > MAX_BALL_SPEED:  # reduction of ball speed limit
+                ball_dy *= 2 / 3
             else:
                 ball_dy *= -1 * speed
             if not interval:
@@ -168,6 +185,7 @@ def collision_check(wall_blocks, row):
                 score += score_block
                 score_text, score_text_rect = score_text_update(score)
                 wall_block.block_wall[row].remove(wall_blocks)
+                block_sound.play()
             collision_active = False
             return True
     return False
@@ -182,6 +200,7 @@ def reset_ball_paddle():
     player_1_x = (WIDTH_SCREEN / 2) - 25  # Initial x position
     hits = 0
 
+
 while game_loop:
     if score >= 448:
         game_over = True
@@ -191,7 +210,7 @@ while game_loop:
             game_loop = False
         elif event.type == pygame.KEYDOWN:
             if interval and event.key == pygame.K_SPACE:
-                if game_over: # game reset
+                if game_over:  # game reset
                     wall_block.create_walls()
                     tries = 1
                     score = 0
@@ -217,13 +236,22 @@ while game_loop:
     if not interval:
         # ball collision with player 1
         if (player_1_y < ball_y + 4 < player_1_y + player_1_height) and (
-                player_1_x < ball_x < player_1_x + player_1_width):
+                player_1_x - paddle_margin < ball_x < player_1_x + player_1_width + paddle_margin):
             collision_active = True
-            ball_dy *= -1
+            paddle_sound.play()
+            if ball_x < player_1_x + player_1_width / 3:  # left collision
+                ball_dx *= -1
+                ball_dy *= -1.0
+            elif ball_x > player_1_x + 2 * player_1_width / 3:  # right collision
+                ball_dx *= -1
+                ball_dy *= -1.0
+            else:  # center collision
+                ball_dy *= -1
     else:
         # ball collision with a bottom line
         if ball_y >= (HEIGHT_SCREEN - 60) - ball_height:
             ball_dy *= -1
+            paddle_sound.play()
 
     # player 1 right movement
     if player_1_move_right:
@@ -266,7 +294,8 @@ while game_loop:
         ball_dy *= -1
         ball_y = 0
         collision_active = True
-        if player_1_width == 50 and interval: # Reduce paddle size
+        wall_sound.play()
+        if player_1_width == 50 and interval:  # Reduce paddle size
             player_1_width = 25
 
     # ball collides with right border
@@ -274,12 +303,14 @@ while game_loop:
         ball_dx *= -1
         ball_x = WIDTH_SCREEN - ball_width
         collision_active = True
+        wall_sound.play()
 
     # ball collides with left border
     if ball_x <= 0:
         ball_dx *= -1
         ball_x = 0
         collision_active = True
+        wall_sound.play()
 
     # Drawing objects
     screen.fill(COLOR_BLACK)
@@ -309,6 +340,15 @@ while game_loop:
     score_text, score_text_rect = score_text_update(score)
     screen.blit(score_text, score_text_rect)
     screen.blit(score_2_text, score_2_text_rect)
+
+    # flashing game points
+    if on_score < 30:
+        screen.blit(score_text, score_text_rect)
+        on_score += 1
+    elif on_score < 50:
+        on_score += 1
+    else:
+        on_score = 0
 
     # Draw ball
     pygame.draw.rect(screen, COLOR_WHITE, (ball_x, ball_y, ball_width, ball_height))
