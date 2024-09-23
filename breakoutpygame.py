@@ -77,7 +77,7 @@ player_1_hitbox_width = 70
 paddle_margin = (player_1_hitbox_width - player_1_width) / 2
 player_1_move_right = False
 player_1_move_left = False
-PLAYER_SPEED = 6
+PLAYER_SPEED = 7
 
 # Create ball
 ball = pygame.image.load("assets/ball.png")
@@ -85,10 +85,10 @@ ball_x = (WIDTH_SCREEN / 2) - 5
 ball_y = HEIGHT_SCREEN - 70
 ball_width = 10
 ball_height = 10
-ball_dx = 5
-ball_dy = 5
+ball_dx = 4
+ball_dy = 4
 ball_area = ball_width * ball_height
-MAX_BALL_SPEED = 6.2
+MAX_BALL_SPEED = 5.5
 
 # sound effects
 paddle_sound = pygame.mixer.Sound('assets/paddle.wav')
@@ -214,6 +214,7 @@ while game_loop:
                     wall_block.create_walls()
                     tries = 1
                     score = 0
+                    player_1_width = 50
                     game_over = False
                 reset_ball_paddle()
                 interval = False
@@ -239,14 +240,18 @@ while game_loop:
                 player_1_x - paddle_margin < ball_x < player_1_x + player_1_width + paddle_margin):
             collision_active = True
             paddle_sound.play()
-            if ball_x < player_1_x + player_1_width / 3:  # left collision
+            collision_point = (ball_x - (player_1_x + player_1_width / 2)) / (player_1_width / 2)
+            if collision_point < -1:
                 ball_dx *= -1
                 ball_dy *= -1.0
-            elif ball_x > player_1_x + 2 * player_1_width / 3:  # right collision
+            elif collision_point > 1:
                 ball_dx *= -1
                 ball_dy *= -1.0
-            else:  # center collision
+            else:
                 ball_dy *= -1
+
+            if ball_dy > 0:
+                ball_y = player_1_y - ball_height
     else:
         # ball collision with a bottom line
         if ball_y >= (HEIGHT_SCREEN - 60) - ball_height:
@@ -295,7 +300,7 @@ while game_loop:
         ball_y = 0
         collision_active = True
         wall_sound.play()
-        if player_1_width == 50 and interval:  # Reduce paddle size
+        if player_1_width == 50 and not interval:  # Reduce paddle size
             player_1_width = 25
 
     # ball collides with right border
@@ -338,7 +343,6 @@ while game_loop:
     try_text, try_text_rect = try_text_update(tries)
     screen.blit(try_text, try_text_rect)
     score_text, score_text_rect = score_text_update(score)
-    screen.blit(score_text, score_text_rect)
     screen.blit(score_2_text, score_2_text_rect)
 
     # flashing game points
